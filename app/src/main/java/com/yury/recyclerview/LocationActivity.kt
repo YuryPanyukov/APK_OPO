@@ -16,8 +16,8 @@ import java.util.Date
 
 class LocationActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLocationBinding
-    private lateinit var currentLocation: String
     private lateinit var mainDB: MainDB
+    private lateinit var currentLocation: String
     private lateinit var numberCheck: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,8 +27,8 @@ class LocationActivity : AppCompatActivity() {
 
         mainDB = MainDB.getDB(this)
 
-        chooseLocation()
         numberCheck = intent.getStringExtra("numberCheck").toString()
+        currentLocation = intent.getStringExtra("currentLocation").toString()
 
         binding.btnGoCheck.setOnClickListener {
             val intent = Intent(this@LocationActivity, BushPlaygroundActivity :: class.java)
@@ -42,6 +42,7 @@ class LocationActivity : AppCompatActivity() {
         val currentDate = sdf.format(Date())
 
         binding.timeView.text = currentDate
+        binding.CurrentLocation.text = currentLocation
 
         binding.getReport.setOnClickListener {
             val intent = Intent(this@LocationActivity, GetCheckActivity::class.java)
@@ -85,28 +86,6 @@ class LocationActivity : AppCompatActivity() {
         intent.putExtra(Intent.EXTRA_TEXT, sharedSub)
         intent.putExtra(Intent.EXTRA_STREAM, Uri.parse(file.path))
         startActivity(Intent.createChooser(intent, "share you App"))
-    }
-
-    private fun chooseLocation() {
-        val locationList = mutableListOf<String>()
-        mainDB.getDao().getAllDivision().asLiveData().observe(this){
-            it.forEach{
-                val name = "${it.name}"
-                locationList.add(name)
-            }
-        }
-
-        val adapter = ArrayAdapter(
-            this@LocationActivity,
-            R.layout.simple_dropdown_item_1line,
-            locationList
-        )
-
-        binding.locationList.setAdapter(adapter)
-
-        binding.locationList.setOnItemClickListener { parent, view, position, l ->
-            currentLocation = parent.getItemAtPosition(position) as String
-        }
     }
 
 }
