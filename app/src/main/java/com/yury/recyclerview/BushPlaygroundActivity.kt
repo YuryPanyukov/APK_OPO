@@ -14,7 +14,7 @@ class BushPlaygroundActivity : AppCompatActivity() {
     private lateinit var binding: ActivityBushPlaygroundBinding
     private lateinit var objectAdapter: ObjectAdapter
     private lateinit var mainDB: MainDB
-    private lateinit var nameDivision: String
+    private lateinit var currentLocation: String
     private lateinit var currentDate: String
     private lateinit var numberCheck: String
 
@@ -23,11 +23,11 @@ class BushPlaygroundActivity : AppCompatActivity() {
         binding = ActivityBushPlaygroundBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        nameDivision = intent.getStringExtra("currentLocation").toString()
+        currentLocation = intent.getStringExtra("currentLocation").toString()
         currentDate = intent.getStringExtra("currentDate").toString()
         numberCheck = intent.getStringExtra("numberCheck").toString()
 
-        binding.currentLocation.setText(numberCheck + ". " + nameDivision)
+        binding.currentLocation.setText(numberCheck + ". " + currentLocation)
         binding.currentDate.setText(currentDate)
 
         binding.bushPlayRv.layoutManager = LinearLayoutManager(this@BushPlaygroundActivity)
@@ -44,8 +44,8 @@ class BushPlaygroundActivity : AppCompatActivity() {
                 val id = "${it.id}".toInt()
                 val name = "${it.name}"
                 val currentDivision = "${it.nameDivision}"
-                if (currentDivision == nameDivision){
-                    objectAdapter.addCheckObject(CheckObject(id, name, nameDivision, currentDate, numberCheck))
+                if (currentLocation == currentDivision){
+                    objectAdapter.addCheckObject(CheckObject(id, name, currentLocation, currentDate, numberCheck))
                 }
             }
         }

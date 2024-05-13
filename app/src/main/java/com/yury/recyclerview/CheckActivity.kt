@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.lifecycle.asLiveData
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.yury.recyclerview.Models.SharedModel
 import com.yury.recyclerview.database.MainDB
 import com.yury.recyclerview.database.StatisticDB
 import com.yury.recyclerview.databinding.ActivityCheckBinding
