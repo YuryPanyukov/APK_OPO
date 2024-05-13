@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">АПК ОПО</string>
+    <string name="preference_file_key">my_pref.file</string>
+</resources>

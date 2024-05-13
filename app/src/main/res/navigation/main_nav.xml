@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_nav"
+    app:startDestination="@id/mainFragment">
+
+    <fragment
+        android:id="@+id/mainFragment"
+        android:name="com.yury.recyclerview.MainFragment"
+        android:label="fragment_main"
+        tools:layout="@layout/fragment_main" />
+    <fragment
+        android:id="@+id/divisionFragment"
+        android:name="com.yury.recyclerview.DivisionFragment"
+        android:label="fragment_division"
+        tools:layout="@layout/fragment_division" />
+    <fragment
+        android:id="@+id/checkFragment"
+        android:name="com.yury.recyclerview.CheckFragment"
+        android:label="fragment_check"
+        tools:layout="@layout/fragment_check" />
+</navigation>
