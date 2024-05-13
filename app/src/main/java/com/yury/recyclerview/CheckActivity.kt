@@ -3,7 +3,6 @@ package com.yury.recyclerview
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.asLiveData
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.yury.recyclerview.Models.SharedModel
@@ -24,7 +23,6 @@ class CheckActivity : AppCompatActivity() {
     private lateinit var nameObject: String
     private lateinit var nameWell: String
     private lateinit var numberCheck: String
-    private lateinit var sharedModel : SharedModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -111,7 +109,6 @@ class CheckActivity : AppCompatActivity() {
         mainDB.getDao().getAllItems().asLiveData().observe(this){
             var currentNum = 1
             it.forEach{
-                val id = "${it.id}".toInt()
                 val name = "${it.name}"
                 val definition = "${it.definition}"
                 checkListInner.add(CheckList(currentNum, name, definition, numberCheck))

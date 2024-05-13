@@ -93,7 +93,7 @@ class MainFragment : Fragment() {
         }.start()
 
         Thread {
-            var nameLocation = "Средний Назым"
+            val nameLocation = "Средний Назым"
             var tempObject = ObjectDB(null, "КП-10", nameLocation)
             mainDB.getDao().insertObject(tempObject)
             var tempWell = HazardousProdFacility(null, "Скв. 1806/10", nameLocation, "КП-10")
@@ -121,7 +121,7 @@ class MainFragment : Fragment() {
         }.start()
 
         Thread {
-            var nameLocation = "Средний Хулым"
+            val nameLocation = "Средний Хулым"
             var tempObject = ObjectDB(null, "КП-1", nameLocation)
             mainDB.getDao().insertObject(tempObject)
             tempObject = ObjectDB(null, "КП-2", nameLocation)
@@ -135,7 +135,7 @@ class MainFragment : Fragment() {
         }.start()
 
         Thread {
-            var nameLocation = "Сергинское"
+            val nameLocation = "Сергинское"
             var tempObject = ObjectDB(null, "КП-1", nameLocation)
             mainDB.getDao().insertObject(tempObject)
             tempObject = ObjectDB(null, "КП-2", nameLocation)
@@ -147,7 +147,7 @@ class MainFragment : Fragment() {
         }.start()
 
         Thread {
-            var nameLocation = "М-р им. В.Н. Виноградова"
+            val nameLocation = "М-р им. В.Н. Виноградова"
             var tempObject = ObjectDB(null, "КП-15", nameLocation)
             mainDB.getDao().insertObject(tempObject)
             tempObject = ObjectDB(null, "КП-202", nameLocation)
