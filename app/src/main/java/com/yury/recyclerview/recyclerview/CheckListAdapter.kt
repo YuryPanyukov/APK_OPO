@@ -17,12 +17,12 @@ class CheckListAdapter(
 
 ): RecyclerView.Adapter<CheckListAdapter.CheckListHolder>() {
 
-    private lateinit var sharedModel : SharedModel
+    //private lateinit var sharedModel : SharedModel
     private lateinit var checkOnItem: ArrayList<Boolean>
 
-    fun setSharedModel(videoModel: SharedModel){
+    /*fun setSharedModel(videoModel: SharedModel){
         sharedModel = videoModel
-    }
+    }*/
 
     class CheckListHolder(item: View): RecyclerView.ViewHolder(item) {
         val binding = CheckLayoutBinding.bind(item)

@@ -37,8 +37,8 @@ class CheckActivity : AppCompatActivity() {
         binding.checkListRv.layoutManager = LinearLayoutManager(this@CheckActivity)
         checkListAdapter = CheckListAdapter(this@CheckActivity, checkListInner)
         checkListAdapter.setCheckOnItem(checkOnItem)
-        sharedModel = ViewModelProvider(this).get(SharedModel :: class.java)
-        checkListAdapter.setSharedModel(sharedModel)
+        //sharedModel = ViewModelProvider(this).get(SharedModel :: class.java)
+        //checkListAdapter.setSharedModel(sharedModel)
         binding.checkListRv.adapter = checkListAdapter
 
         currentDate = intent.getStringExtra("currentDate").toString()
@@ -109,11 +109,13 @@ class CheckActivity : AppCompatActivity() {
         checkOnItem = ArrayList()
 
         mainDB.getDao().getAllItems().asLiveData().observe(this){
+            var currentNum = 1
             it.forEach{
                 val id = "${it.id}".toInt()
                 val name = "${it.name}"
                 val definition = "${it.definition}"
-                checkListInner.add(CheckList(id, name, definition, numberCheck))
+                checkListInner.add(CheckList(currentNum, name, definition, numberCheck))
+                currentNum++
                 checkOnItem.add(false)
             }
         }

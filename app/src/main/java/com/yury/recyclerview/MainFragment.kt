@@ -39,9 +39,7 @@ class MainFragment : Fragment() {
         readStatisticDB()
 
         binding.buttonAdd.setOnClickListener { creatNewCheck() }
-
         binding.buttonInit.setOnClickListener { initAllObject() }
-
         binding.buttonDelete.setOnClickListener { dropAllDB() }
 
         return binding.root
@@ -61,7 +59,7 @@ class MainFragment : Fragment() {
                     numPrevious = numCurrent
                 }
             }
-            Toast.makeText(requireContext(), allCheck.size.toString(), Toast.LENGTH_LONG).show()
+
             for (item in allCheck) {
                 plantAdapter.addPlant(item)
             }
