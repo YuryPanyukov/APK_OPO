@@ -23,9 +23,6 @@
             android:name=".GetCheckActivity"
             android:exported="false" />
         <activity
-            android:name=".FullActivity"
-            android:exported="false" />
-        <activity
             android:name=".ChangeWellActivity"
             android:exported="false" />
         <activity
@@ -45,9 +42,6 @@
             android:exported="false" />
         <activity
             android:name=".BushPlaygroundActivity"
-            android:exported="false" />
-        <activity
-            android:name=".BushPlaygroudActivity"
             android:exported="false" />
         <activity
             android:name=".LocationActivity"
