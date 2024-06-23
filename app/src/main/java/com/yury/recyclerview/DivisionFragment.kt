@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
+import com.yury.recyclerview.QRReader.text2QRReader
 import com.yury.recyclerview.databinding.FragmentDivisionBinding
 
 class DivisionFragment : Fragment() {
@@ -16,7 +17,22 @@ class DivisionFragment : Fragment() {
         if (result.contents == null){
 
         } else {
-            binding.textinInDF.text = result.contents
+            var text = result.contents
+            val qrReader = text2QRReader(text)
+
+            text += '\n'
+            text += "Location: " + qrReader.header + '\n'
+            var idx = 0
+            for (obj in qrReader.objects){
+                text += obj + ": "
+                for (well in qrReader.wells[idx]){
+                    text += well + ", "
+                }
+                text += '\n'
+                idx++
+            }
+
+            binding.textinInDF.text = text
         }
     }
 
