@@ -1,4 +1,22 @@
 <resources>
     <string name="app_name">АПК ОПО</string>
     <string name="preference_file_key">my_pref.file</string>
+
+    <!-- Экраны комиссий/замечаний -->
+    <string name="menu_commissions">Комиссии</string>
+    <string name="menu_remarks">Замечания</string>
+    <string name="menu_report">Отчёт</string>
+    <string name="menu_settings">Настройки</string>
+
+    <string name="placeholder_title">Новая комиссия</string>
+    <string name="hint_commission_title">Название комиссии</string>
+    <string name="btn_create_commission">Создать</string>
+    <string name="hint_location">Место</string>
+    <string name="hint_object">Объект</string>
+    <string name="hint_type">Тип замечания</string>
+    <string name="hint_description">Описание</string>
+    <string name="btn_attach_photo">Прикрепить фото</string>
+    <string name="btn_save_remark">Сохранить замечание</string>
+    <string name="btn_generate_report">Сгенерировать отчёт</string>
+    <string name="btn_send_email">Отправить по email</string>
 </resources>

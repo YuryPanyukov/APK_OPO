@@ -13,6 +13,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "RecyclerView"
+rootProject.name = "APKO_OPO"
 include(":app")
  

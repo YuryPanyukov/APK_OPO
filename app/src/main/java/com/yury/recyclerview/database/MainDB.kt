@@ -15,13 +15,22 @@ import androidx.room.RoomDatabase
     // ОПО на Кустовых площадках (Скважины, АГЗУ, Площадки и т.д)
     HazardousProdFacility::class,
     // Статистика. Общий свод данных
-    StatisticDB::class],
-    version = 3)
-abstract class MainDB: RoomDatabase() {
+    StatisticDB::class,
+    // АПК ОПО — комиссии, замечания и фото
+    Commission::class,
+    Remark::class,
+    Photo::class],
+    version = 4)
+abstract class MainDB : RoomDatabase() {
     abstract fun getDao(): Dao
 
-    companion object{
-        fun getDB(context: Context): MainDB{
+    // АПК ОПО
+    abstract fun getCommissionDao(): CommissionDao
+    abstract fun getRemarkDao(): RemarkDao
+    abstract fun getPhotoDao(): PhotoDao
+
+    companion object {
+        fun getDB(context: Context): MainDB {
             return Room.databaseBuilder(
                 context.applicationContext,
                 MainDB::class.java,
