@@ -13,3 +13,8 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Секреты подписи релизной сборки
+/keystore.properties
+*.jks
+*.keystore

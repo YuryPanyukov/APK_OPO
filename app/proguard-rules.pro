@@ -1,21 +1,13 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
+# Правила R8/ProGuard для release-сборки приложения «АПК ОПО».
 #
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
-
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
-
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
-
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Большинство нужных правил приходит из consumer-правил зависимостей:
+#   • Room        — сохраняет сгенерированные *_Impl и сущности БД;
+#   • Compose     — сохраняет @Composable и runtime-метаданные;
+#   • Coil        — сохраняет загрузчики изображений;
+#   • play-services-location — сохраняет Parcelable-модели геолокации.
+#
+# Явные правила ниже не обязательны — это точка входа для правил,
+# специфичных для приложения. Добавляйте их по мере необходимости.
+#
+# Карта обфускации для ретрейса релизных стек-трейсов:
+#   app/build/outputs/mapping/release/mapping.txt
