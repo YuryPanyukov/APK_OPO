@@ -12,8 +12,10 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import code_sys.apkopo.ui.theme.APKOPOTheme
+import code_sys.apkopo.ui.theme.APKOPOTheme
 import code_sys.apkopo.util.GeoPoint
 import code_sys.apkopo.util.PhotoMeta
+import androidx.compose.material3.MaterialTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -61,6 +63,8 @@ class AddRemarkScreenTest {
                     photos = photos,
                     geo = geo,
                     saving = saving,
+                    gpsStatus = "GPS: неопределено",
+                    gpsColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     onLocation = onLocation,
                     onObjectName = onObjectName,
                     onRemarkType = {},

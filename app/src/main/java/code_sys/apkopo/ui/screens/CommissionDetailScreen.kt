@@ -38,7 +38,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import code_sys.apkopo.R
 import code_sys.apkopo.data.local.entity.Commission
 import code_sys.apkopo.data.local.entity.Remark
 import code_sys.apkopo.util.PhotoStorage
@@ -62,21 +64,21 @@ fun CommissionDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(commission?.title ?: "Комиссия") },
+                title = { Text(commission?.title ?: stringResource(R.string.screen_commission_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.button_back))
                     }
                 },
                 actions = {
                     IconButton(onClick = { confirmRename = true }) {
-                        Icon(Icons.Default.Edit, contentDescription = "Переименовать")
+                        Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.content_rename))
                     }
                     IconButton(onClick = onReport) {
-                        Icon(Icons.Default.Share, contentDescription = "Отчёт")
+                        Icon(Icons.Default.Share, contentDescription = stringResource(R.string.report_title))
                     }
                     IconButton(onClick = { confirmDelete = true }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Удалить")
+                        Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.button_delete))
                     }
                 }
             )
@@ -85,7 +87,7 @@ fun CommissionDetailScreen(
             ExtendedFloatingActionButton(
                 onClick = onAddRemark,
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text("Замечание") }
+                text = { Text(stringResource(R.string.content_remark)) }
             )
         }
     ) { padding ->
@@ -95,7 +97,7 @@ fun CommissionDetailScreen(
                     .fillMaxSize()
                     .padding(padding),
                 contentAlignment = Alignment.Center
-            ) { Text("Загрузка…") }
+            ) { Text(stringResource(R.string.common_loading)) }
             return@Scaffold
         }
 
@@ -109,13 +111,13 @@ fun CommissionDetailScreen(
             item {
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Дата создания", style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.label_created_date), style = MaterialTheme.typography.labelMedium)
                         Text(
                             PhotoStorage.formatTime(commission.date),
                             style = MaterialTheme.typography.bodyLarge
                         )
                         Text(
-                            "Замечаний: ${remarks.size}",
+                            stringResource(R.string.label_remarks_count, remarks.size),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(top = 8.dp)
                         )
@@ -126,7 +128,7 @@ fun CommissionDetailScreen(
             if (remarks.isEmpty()) {
                 item {
                     Text(
-                        "Замечаний пока нет. Нажмите «Замечание», чтобы добавить.",
+                        stringResource(R.string.screen_commission_no_remarks),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(top = 24.dp)
                     )
@@ -142,7 +144,7 @@ fun CommissionDetailScreen(
                 item { HorizontalDivider() }
                 item {
                     Text(
-                        "Для просмотра отчёта нажмите кнопку отправки в панели сверху.",
+                        stringResource(R.string.screen_commission_report_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -165,16 +167,16 @@ fun CommissionDetailScreen(
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Удалить комиссию?") },
-            text = { Text("Все замечания и фото будут удалены.") },
+            title = { Text(stringResource(R.string.dialog_title_delete_commission)) },
+            text = { Text(stringResource(R.string.screen_commission_delete_text)) },
             confirmButton = {
                 TextButton(onClick = {
                     confirmDelete = false
                     onDelete()
-                }) { Text("Удалить", color = MaterialTheme.colorScheme.error) }
+                }) { Text(stringResource(R.string.button_delete), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { confirmDelete = false }) { Text("Отмена") }
+                TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.button_cancel)) }
             }
         )
     }
@@ -189,12 +191,12 @@ private fun RenameCommissionDialog(
     var title by remember { mutableStateOf(initialTitle) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Переименовать комиссию") },
+        title = { Text(stringResource(R.string.dialog_title_rename_commission)) },
         text = {
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
-                label = { Text("Название") },
+                label = { Text(stringResource(R.string.form_hint_title)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -203,10 +205,10 @@ private fun RenameCommissionDialog(
             TextButton(
                 onClick = { if (title.isNotBlank()) onConfirm(title) },
                 enabled = title.isNotBlank()
-            ) { Text("Сохранить") }
+            ) { Text(stringResource(R.string.button_save)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Отмена") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.button_cancel)) }
         }
     )
 }
@@ -223,14 +225,14 @@ private fun RemarkCard(index: Int, remark: Remark, onClick: () -> Unit) {
                 "${index + 1}. ${remark.objectName}",
                 style = MaterialTheme.typography.titleSmall
             )
-            InfoRow("Место", remark.location)
-            InfoRow("Тип", remark.remarkType)
-            InfoRow("Описание", remark.description)
+            InfoRow(stringResource(R.string.form_hint_place), remark.location)
+            InfoRow(stringResource(R.string.label_type), remark.remarkType)
+            InfoRow(stringResource(R.string.form_hint_description), remark.description)
             InfoRow(
-                "GPS",
+                stringResource(R.string.label_gps),
                 "%.6f, %.6f".format(java.util.Locale.US, remark.remarkLat, remark.remarkLng)
             )
-            InfoRow("Время", PhotoStorage.formatTime(remark.remarkTime))
+            InfoRow(stringResource(R.string.label_time), PhotoStorage.formatTime(remark.remarkTime))
         }
     }
 }

@@ -1,29 +1,28 @@
 package code_sys.apkopo.ui.screens
 
-import android.graphics.Bitmap
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.assertIsNotSelected
-import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import code_sys.apkopo.domain.repository.ReportFormat
+import code_sys.apkopo.R
+import code_sys.apkopo.data.local.entity.Photo
+import code_sys.apkopo.data.local.entity.Remark
 import code_sys.apkopo.ui.theme.APKOPOTheme
-import code_sys.apkopo.ui.viewmodel.RemarkDetailViewModel
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
 
-/** Compose UI-тесты экрана просмотра замечания: прелоуд, карточка,
- *  слайдер, карта, редактирование/удаление, состояния.
+/**
+ * Compose UI-тесты stateless-экрана просмотра замечания.
+ * Покрывают: отображение данных, пустые состояния, кнопку «Показать на карте»
+ * (включая disabled без координат) и диалог удаления из контента.
  */
 @RunWith(AndroidJUnit4::class)
 class RemarkDetailScreenTest {
@@ -31,145 +30,184 @@ class RemarkDetailScreenTest {
     @get:Rule
     val rule = createComposeRule()
 
+    private val remark = Remark(
+        id = 1,
+        commissionId = 10,
+        location = "Котельная №2",
+        objectName = "Насос Н-3",
+        remarkType = "Неисправность",
+        description = "Течь по фланцу",
+        remarkLat = 55.751,
+        remarkLng = 37.618,
+        remarkTime = 1_700_000_000_000L,
+        userLat = 55.752,
+        userLng = 37.619,
+        userTime = 1_700_000_100_000L
+    )
+
+    private val photo = Photo(
+        id = 1,
+        remarkId = 1,
+        filePath = "/tmp/img.jpg",
+        photoLat = 55.751,
+        photoLng = 37.618,
+        photoTime = 1_700_000_050_000L
+    )
+
     private fun setContent(
-        remark: code_sys.apkopo.data.local.entity.Remark = emptyRemark(),
-        photos: List<code_sys.apkopo.util.PhotoMeta> = emptyList(),
-        state: RemarkDetailViewModel.State = RemarkDetailViewModel.State.Ready,
+        remark: Remark? = this.remark,
+        photos: List<Photo> = listOf(photo),
+        showDeleteDialog: Boolean = false,
         onEdit: () -> Unit = {},
         onBack: () -> Unit = {},
-        onDelete: () -> Unit = {}
+        onRequestDelete: () -> Unit = {},
+        onConfirmDelete: () -> Unit = {},
+        onCancelDelete: () -> Unit = {}
     ) {
         rule.setContent {
             APKOPOTheme {
-                RemarkDetailScreen(
-                    viewModel = viewModel(remark, photos),
+                RemarkDetailContent(
+                    remark = remark,
+                    photos = photos,
+                    // В тестах фото не реально загружается (нет файла на диске):
+                    // подходит синглтон-загрузчик Coil без сети.
+                    imageLoader = coil3.SingletonImageLoader.get(androidx.compose.ui.platform.LocalContext.current),
                     onEdit = onEdit,
-                    onBack = onBack
+                    onBack = onBack,
+                    showDeleteDialog = showDeleteDialog,
+                    onRequestDelete = onRequestDelete,
+                    onConfirmDelete = onConfirmDelete,
+                    onCancelDelete = onCancelDelete
                 )
             }
         }
     }
 
-    private fun viewModel(remark: code_sys.apkopo.data.local.entity.Remark, photos: List<code_sys.apkopo.util.PhotoMeta>): RemarkDetailViewModel {
-        val container = DummyContainer(remark, photos)
-        return RemarkDetailViewModel(container, remark.id)
-    }
+    // ---------- Отображение ----------
 
-    private fun emptyRemark(id: Long = 42L): code_sys.apkopo.data.local.entity.Remark = code_sys.apkopo.data.local.entity.Remark(
-        id = id,
-        commissionId = 1L,
-        location = "Цех 3",
-        objectName = "Труба",
-        remarkType = "Нарушение",
-        description = "Пlossаждения в шкале манометра",
-        remarkLat = 55.7522,
-        remarkLng = 37.6155,
-        remarkTime = 1_700_000_000_000L,
-        userLat = 55.7530,
-        userLng = 37.6160,
-        userTime = 1_700_000_000_100L
-    )
+    @Test
+    fun displaysRemarkInfo() {
+        setContent()
 
-    private fun emptyPhoto(meta: code_sys.apkopo.util.PhotoMeta = PhotoMeta("file.jpg", 0.0, 0.0, 1L)) = meta
+        // Заголовок экрана и объект замечания
+        rule.onNodeWithText("Замечание").assertIsDisplayed()
+        rule.onNodeWithText("Насос Н-3").assertIsDisplayed()
+        rule.onNodeWithText("Неисправность").assertIsDisplayed()
 
-    private fun DummyContainer(remark: code_sys.apkopo.data.local.entity.Remark, photos: List<code_sys.apkopo.util.PhotoMeta>): DummyContainer {
-        return object : DummyContainer {
-            override val remark = remark
-            override val photos = photos
-        }
-    }
-
-    private abstract class DummyContainer {
-        abstract val remark: code_sys.apkopo.data.local.entity.Remark
-        abstract val photos: List<code_sys.apkopo.util.PhotoMeta>
+        // Карточка с деталями — прокрутка до «Место: Котельная №2»
+        rule.onNodeWithText("Место: ", substring = true)
+            .performScrollTo()
+            .assertIsDisplayed()
+        rule.onNodeWithText("Котельная №2", substring = true).assertIsDisplayed()
+        rule.onNodeWithText("Течь по фланцу", substring = true).assertIsDisplayed()
     }
 
     @Test
-    fun loaded_showsObjectAndType() {
-        setContent(remark = emptyRemark().copy(objectName = "Котёл №1"))
+    fun nullRemark_showsLoading() {
+        setContent(remark = null)
 
-        rule.onNodeWithText("Котёл №1").assertIsDisplayed()
-        rule.onNodeWithText("Нарушение").assertIsDisplayed()
-        rule.onNodeWithText("Цех 3").assertIsDisplayed()
+        rule.onNodeWithText("Загрузка…").assertIsDisplayed()
+        rule.onNodeWithText("Насос Н-3").assertDoesNotExist()
     }
 
     @Test
-    fun photosSlider_showsCount() {
-        val photos = listOf(
-            emptyPhoto(PhotoMeta("a.jpg", 1.0, 2.0, 1_000L)),
-            emptyPhoto(PhotoMeta("b.jpg", 3.0, 4.0, 2_000L))
-        )
-
-        setContent(photos = photos)
-
-        rule.onNodeWithText("1 / 2").assertIsDisplayed()
-        rule.onNodeWithText("2 / 2").assertIsDisplayed()
-    }
-
-    @Test
-    fun emptyPhotos_showsFallback() {
+    fun noPhotos_showsEmptyState() {
         setContent(photos = emptyList())
 
-        rule.onNodeWithText("Фото не прикреплены").assertIsDisplayed()
+        rule.onNodeWithText("Фото не прикреплены").performScrollTo().assertIsDisplayed()
     }
 
     @Test
-    fun showMapButton_enabled_whenCoords() {
-        setContent(remark = emptyRemark().copy(remarkLat = 55.75, remarkLng = 37.61))
+    fun withPhotos_photoDescriptionsExist() {
+        setContent()
 
-        rule.onNodeWithText("Показать на карте").assertIsDisplayed()
-        rule.onNodeWithText("Показать на карте").performClick()
+        rule.onNodeWithContentDescription("Фото 1").assertExists()
+    }
+
+    // ---------- Кнопка «Показать на карте» ----------
+
+    @Test
+    fun mapButton_enabled_withCoords() {
+        setContent()
+
+        rule.onNodeWithTag(RemarkDetailTags.SHOW_MAP)
+            .performScrollTo()
+            .assertIsEnabled()
     }
 
     @Test
-    fun showMapButton_disabled_whenNoCoords() {
-        setContent(remark = emptyRemark().copy(remarkLat = 0.0, remarkLng = 0.0))
+    fun mapButton_disabled_withoutCoords() {
+        setContent(
+            remark = remark.copy(remarkLat = 0.0, remarkLng = 0.0)
+        )
 
-        rule.onNodeWithText("Показать на карте").assertIsDisplayed()
-        rule.onNodeWithText("Показать на карте").assertIsNotEnabled()
+        rule.onNodeWithTag(RemarkDetailTags.SHOW_MAP)
+            .performScrollTo()
+            .assertIsNotEnabled()
     }
 
+    // ---------- Верхняя панель ----------
+
     @Test
-    fun editButton_invokesOnEdit() {
+    fun editButton_invokesCallback() {
         var edited = false
         setContent(onEdit = { edited = true })
 
-        rule.onNodeWithContentDescription("Редактировать").performClick()
+        rule.onNodeWithTag(RemarkDetailTags.EDIT).performClick()
 
         assertTrue(edited)
     }
 
     @Test
-    fun back_invokesOnBack() {
-        var back = false
-        setContent(onBack = { back = true })
+    fun backButton_invokesCallback() {
+        var backed = false
+        setContent(onBack = { backed = true })
 
         rule.onNodeWithContentDescription("Назад").performClick()
 
-        assertTrue(back)
+        assertTrue(backed)
+    }
+
+    // ---------- Диалог удаления ----------
+
+    @Test
+    fun deleteButton_showsDialog_viaCallbackDriven() {
+        // Контент stateless: кнопка DELETE только зовёт колбэк;
+        // сам диалог включается параметром showDeleteDialog.
+        var requested = false
+        setContent(onRequestDelete = { requested = true })
+
+        rule.onNodeWithTag(RemarkDetailTags.DELETE).performClick()
+
+        assertTrue(requested)
     }
 
     @Test
-    fun deleteOpensDialog_andDeletes() {
-        var deleted = false
-        setContent(onDelete = { deleted = true })
+    fun deleteDialog_visible_showsTitleAndButtons() {
+        setContent(showDeleteDialog = true)
 
-        rule.onNodeWithContentDescription("Удалить").performClick()
         rule.onNodeWithText("Удалить замечание?").assertIsDisplayed()
-        rule.onNodeWithText("Удалить", substring = true).performClick()
-
-        assertTrue(deleted)
+        rule.onNodeWithText("Замечание и все прикреплённые фото будут удалены.")
+            .assertIsDisplayed()
     }
 
     @Test
-    fun photoMetadata_showsExif() {
-        setContent(
-            photos = listOf(
-                emptyPhoto(PhotoMeta("p.jpg", 1.0, 2.0, 1_700_000_001_000L))
-            )
-        )
+    fun deleteDialog_confirm_invokesCallback() {
+        var confirmed = false
+        setContent(showDeleteDialog = true, onConfirmDelete = { confirmed = true })
 
-        rule.onNodeWithText("Съёмка: 28.09.2023 12:13:21").assertIsDisplayed()
-        rule.onNodeWithText("GPS: 1.000000, 2.000000").assertIsDisplayed()
+        rule.onNodeWithTag(RemarkDetailTags.CONFIRM_DELETE).performClick()
+
+        assertTrue(confirmed)
+    }
+
+    @Test
+    fun deleteDialog_cancel_invokesCallback() {
+        var cancelled = false
+        setContent(showDeleteDialog = true, onCancelDelete = { cancelled = true })
+
+        rule.onNodeWithTag(RemarkDetailTags.CANCEL_DELETE).performClick()
+
+        assertTrue(cancelled)
     }
 }

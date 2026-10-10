@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -27,6 +28,39 @@ import java.io.File
 
 /** Зависимости для фабрик ViewModel. */
 private fun AppContainer.viewModels(): AppContainer = this
+
+/** Текстовые значения формы замечания (для merge при предзаполнении). */
+data class RemarkFormText(
+    val location: String,
+    val objectName: String,
+    val remarkType: String,
+    val description: String
+)
+
+/** Признаки «поле изменено пользователем» — предзаполнение такие поля не затирает. */
+data class RemarkFormDirty(
+    val location: Boolean = false,
+    val objectName: Boolean = false,
+    val remarkType: Boolean = false,
+    val description: Boolean = false,
+    val geo: Boolean = false,
+    val photos: Boolean = false
+)
+
+/**
+ * Слияние предзаполнения (загружено из БД асинхронно) с текущим вводом:
+ * загруженное значение применяется только к ещё не изменённым пользователем полям.
+ */
+internal fun mergePrefillText(
+    current: RemarkFormText,
+    loaded: RemarkFormText,
+    dirty: RemarkFormDirty
+): RemarkFormText = RemarkFormText(
+    location = if (dirty.location) current.location else loaded.location,
+    objectName = if (dirty.objectName) current.objectName else loaded.objectName,
+    remarkType = if (dirty.remarkType) current.remarkType else loaded.remarkType,
+    description = if (dirty.description) current.description else loaded.description
+)
 
 /** Список комиссий. */
 class CommissionListViewModel(private val container: AppContainer) : ViewModel() {
@@ -97,6 +131,9 @@ class AddRemarkViewModel(
     private val editRemarkId: Long? = null
 ) : ViewModel() {
 
+    /** ImageLoader Coil из контейнера (для AsyncImage в списке фото). */
+    val imageLoader: coil3.ImageLoader = container.imageLoader.imageLoader
+
     /** Режим редактирования существующего замечания (а не создания нового). */
     val isEdit: Boolean = editRemarkId != null
 
@@ -119,7 +156,7 @@ class AddRemarkViewModel(
     val geo: StateFlow<GeoPoint?> = _geo.asStateFlow()
 
     /** GPS доступен: true, если получены координаты с разрешениями/сигналом. */
-    val gpsAvailable: StateFlow<Boolean> = _geo.mapNotNull { it?.takeIf { it.available } }.stateIn(
+    val gpsAvailable: StateFlow<Boolean> = _geo.combine(geo) { geo, _ -> geo?.available == true }.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5_000), false
     )
 
@@ -131,6 +168,9 @@ class AddRemarkViewModel(
 
     /** Пути фото, снятых с замечания в режиме редактирования. */
     private val removedPaths = mutableSetOf<String>()
+
+    /** Признаки «поле уже изменено пользователем» (защита от затирания ввода). */
+    private var dirty = RemarkFormDirty()
 
     /** Загрузка существующего замечания (только в режиме редактирования). */
     private val loadJob: Job? = editRemarkId?.let { id ->
@@ -144,30 +184,70 @@ class AddRemarkViewModel(
                 }
             } ?: return@launch
             val (remark, photos) = loaded
-            _location.value = remark.location
-            _objectName.value = remark.objectName
-            _remarkType.value = remark.remarkType
-            _description.value = remark.description
-            _geo.value = GeoPoint(remark.userLat, remark.userLng, remark.userTime)
+            // Предзаполнение не затирает уже изменённые пользователем поля:
+            // за время загрузки он мог начать вводить текст.
+            val current = RemarkFormText(
+                location = _location.value,
+                objectName = _objectName.value,
+                remarkType = _remarkType.value,
+                description = _description.value
+            )
+            val prefill = RemarkFormText(
+                location = remark.location,
+                objectName = remark.objectName,
+                remarkType = remark.remarkType,
+                description = remark.description
+            )
+            val merged = mergePrefillText(current, prefill, dirty)
+            _location.value = merged.location
+            _objectName.value = merged.objectName
+            _remarkType.value = merged.remarkType
+            _description.value = merged.description
+            // GPS-точка берётся только если пользователь не запросил свою (fetchLocation).
+            if (!dirty.geo) {
+                _geo.value = GeoPoint(remark.userLat, remark.userLng, remark.userTime)
+            }
             existingPaths += photos.map { it.filePath }
-            _photos.value = photos.map {
-                PhotoMeta(it.filePath, it.photoLat, it.photoLng, it.photoTime)
+            // Фото не затираем, если пользователь успел добавить свои.
+            if (_photos.value.isEmpty()) {
+                _photos.value = photos.map {
+                    PhotoMeta(it.filePath, it.photoLat, it.photoLng, it.photoTime)
+                }
+            } else {
+                existingPaths += _photos.value.map { it.filePath }
             }
         }
     }
 
-    fun onLocation(v: String) { _location.value = v }
-    fun onObjectName(v: String) { _objectName.value = v }
-    fun onRemarkType(v: String) { _remarkType.value = v }
-    fun onDescription(v: String) { _description.value = v }
+    fun onLocation(v: String) {
+        dirty = dirty.copy(location = true)
+        _location.value = v
+    }
+
+    fun onObjectName(v: String) {
+        dirty = dirty.copy(objectName = true)
+        _objectName.value = v
+    }
+
+    fun onRemarkType(v: String) {
+        dirty = dirty.copy(remarkType = true)
+        _remarkType.value = v
+    }
+
+    fun onDescription(v: String) {
+        dirty = dirty.copy(description = true)
+        _description.value = v
+    }
 
     fun removePhoto(meta: PhotoMeta) {
+        dirty = dirty.copy(photos = true)
         _photos.value = _photos.value - meta
         if (meta.filePath in existingPaths) removedPaths += meta.filePath
     }
 
     /** Запрашиваем текущее положение пользователя. */
     fun fetchLocation() {
+        dirty = dirty.copy(geo = true)
         viewModelScope.launch {
             _geo.value = container.locationProvider.currentPoint()
         }
@@ -190,6 +270,7 @@ class AddRemarkViewModel(
                 point?.lat ?: 0.0,
                 point?.lng ?: 0.0
             )
+            dirty = dirty.copy(photos = true)
             _photos.value = _photos.value + meta
         }
     }
@@ -203,6 +284,7 @@ class AddRemarkViewModel(
                 point?.lat ?: 0.0,
                 point?.lng ?: 0.0
             ) ?: return@launch
+            dirty = dirty.copy(photos = true)
             _photos.value = _photos.value + meta
         }
     }
@@ -275,6 +357,9 @@ class RemarkDetailViewModel(
     private val container: AppContainer,
     remarkId: Long
 ) : ViewModel() {
+
+    /** ImageLoader Coil из контейнера (для AsyncImage при просмотре фото). */
+    val imageLoader: coil3.ImageLoader = container.imageLoader.imageLoader
 
     val remark = container.remarkRepository.observeById(remarkId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)

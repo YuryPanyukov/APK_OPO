@@ -53,21 +53,32 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
+import code_sys.apkopo.R
+import code_sys.apkopo.data.local.entity.Photo
+import code_sys.apkopo.data.local.entity.Remark
 import code_sys.apkopo.ui.viewmodel.RemarkDetailViewModel
 import code_sys.apkopo.util.PhotoStorage
 import java.io.File
 import java.util.Locale
 
+/** Теги элементов экрана замечания (используются в UI-тестах). */
+object RemarkDetailTags {
+    const val SHOW_MAP = "detail_show_map_button"
+    const val DELETE = "detail_delete_button"
+    const val EDIT = "detail_edit_button"
+    const val CONFIRM_DELETE = "detail_confirm_delete_button"
+    const val CANCEL_DELETE = "detail_cancel_delete_button"
+}
+
 /**
- * Экран просмотра замечания: слайдер фото (свайп, счётчик, зум по тапу),
- * подпись с EXIF-метаданными, информация о замечании и кнопка
- * «Показать на карте» (открывает внешнее картографическое приложение).
+ * Состоятельная обёртка: связывает [RemarkDetailViewModel] со stateless-контентом.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RemarkDetailScreen(
     viewModel: RemarkDetailViewModel,
@@ -76,24 +87,63 @@ fun RemarkDetailScreen(
 ) {
     val remark by viewModel.remark.collectAsStateWithLifecycle()
     val photos by viewModel.photos.collectAsStateWithLifecycle()
-    val context = LocalContext.current
     var confirmDelete by remember { mutableStateOf(false) }
+
+    RemarkDetailContent(
+        remark = remark,
+        photos = photos,
+        imageLoader = viewModel.imageLoader,
+        onEdit = onEdit,
+        onBack = onBack,
+        showDeleteDialog = confirmDelete,
+        onRequestDelete = { confirmDelete = true },
+        onConfirmDelete = {
+            confirmDelete = false
+            viewModel.delete(onDone = onBack)
+        },
+        onCancelDelete = { confirmDelete = false }
+    )
+}
+
+/**
+ * Экран просмотра замечания (stateless): слайдер фото (свайп, счётчик, зум),
+ * подпись с EXIF-метаданными, информация о замечании и кнопка
+ * «Показать на карте» (открывает внешнее картографическое приложение).
+ * Всё состояние приходит сверху — экран удобно тестировать по параметрам.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RemarkDetailContent(
+    remark: Remark?,
+    photos: List<Photo>,
+    imageLoader: coil3.ImageLoader,
+    onEdit: () -> Unit,
+    onBack: () -> Unit,
+    showDeleteDialog: Boolean = false,
+    onRequestDelete: () -> Unit,
+    onConfirmDelete: () -> Unit,
+    onCancelDelete: () -> Unit
+) {
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Замечание") },
+                title = { Text(stringResource(R.string.detail_title_remark)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.button_back))
                     }
                 },
                 actions = {
-                    IconButton(onClick = onEdit) {
-                        Icon(Icons.Default.Edit, contentDescription = "Редактировать")
+                    IconButton(onClick = onEdit, modifier = Modifier.testTag(RemarkDetailTags.EDIT)) {
+                        Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.action_edit))
                     }
-                    IconButton(onClick = { confirmDelete = true }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Удалить")
+                    IconButton(
+                        onClick = onRequestDelete,
+                        modifier = Modifier.testTag(RemarkDetailTags.DELETE)
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.button_delete))
                     }
                 }
             )
@@ -106,7 +156,7 @@ fun RemarkDetailScreen(
                     .fillMaxSize()
                     .padding(padding),
                 contentAlignment = Alignment.Center
-            ) { Text("Загрузка…") }
+            ) { Text(stringResource(R.string.common_loading)) }
             return@Scaffold
         }
 
@@ -126,7 +176,7 @@ fun RemarkDetailScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        "Фото не прикреплены",
+                        stringResource(R.string.detail_no_photos),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -144,8 +194,9 @@ fun RemarkDetailScreen(
                         modifier = Modifier.fillMaxSize()
                     ) { page ->
                         ZoomableImage(
+                            imageLoader = imageLoader,
                             model = File(photos[page].filePath),
-                            contentDescription = "Фото ${page + 1}"
+                            contentDescription = stringResource(R.string.content_photo_number, page + 1)
                         )
                     }
 
@@ -178,15 +229,18 @@ fun RemarkDetailScreen(
                                 .padding(horizontal = 12.dp, vertical = 8.dp)
                         ) {
                             Text(
-                                text = "Съёмка: ${PhotoStorage.formatTime(current.photoTime)}",
+                                text = stringResource(
+                                    R.string.detail_shot_time,
+                                    PhotoStorage.formatTime(current.photoTime)
+                                ),
                                 color = Color.White,
                                 fontSize = 12.sp
                             )
                             Text(
                                 text = if (current.photoLat == 0.0 && current.photoLng == 0.0) {
-                                    "GPS: нет данных"
+                                    stringResource(R.string.detail_gps_no_data)
                                 } else {
-                                    "GPS: " + "%.6f, %.6f".format(
+                                    "%.6f, %.6f".format(
                                         Locale.US, current.photoLat, current.photoLng
                                     )
                                 },
@@ -214,15 +268,15 @@ fun RemarkDetailScreen(
 
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        DetailRow("Место", r.location)
-                        DetailRow("Описание", r.description)
+                        DetailRow(stringResource(R.string.form_hint_place), r.location)
+                        DetailRow(stringResource(R.string.form_hint_description), r.description)
                         DetailRow(
-                            "GPS замечания",
+                            stringResource(R.string.detail_gps_remark),
                             "${formatCoord(r.remarkLat, r.remarkLng)} • " +
                                 PhotoStorage.formatTime(r.remarkTime)
                         )
                         DetailRow(
-                            "GPS пользователя",
+                            stringResource(R.string.detail_gps_user),
                             "${formatCoord(r.userLat, r.userLng)} • " +
                                 PhotoStorage.formatTime(r.userTime)
                         )
@@ -232,43 +286,62 @@ fun RemarkDetailScreen(
                 Spacer(Modifier.height(16.dp))
 
                 val hasCoords = r.remarkLat != 0.0 || r.remarkLng != 0.0
+                val noCoordsText = stringResource(R.string.detail_no_coords)
+                val noMapAppText = stringResource(R.string.detail_no_gps_app)
                 FilledTonalButton(
                     onClick = {
                         if (!hasCoords) {
                             android.widget.Toast
-                                .makeText(context, "Координаты неизвестны", android.widget.Toast.LENGTH_SHORT)
+                                .makeText(context, noCoordsText, android.widget.Toast.LENGTH_SHORT)
                                 .show()
                             return@FilledTonalButton
                         }
-                        openInExternalMap(context, r.remarkLat, r.remarkLng)
+                        openInExternalMap(context, r.remarkLat, r.remarkLng, noMapAppText)
                     },
                     enabled = hasCoords,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(RemarkDetailTags.SHOW_MAP)
                 ) {
                     Icon(Icons.Default.Place, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.size(8.dp))
-                    Text("Показать на карте")
+                    Text(stringResource(R.string.action_show_map))
                 }
             }
         }
     }
 
-    if (confirmDelete) {
-        AlertDialog(
-            onDismissRequest = { confirmDelete = false },
-            title = { Text("Удалить замечание?") },
-            text = { Text("Замечание и все прикреплённые фото будут удалены.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirmDelete = false
-                    viewModel.delete(onDone = onBack)
-                }) { Text("Удалить", color = MaterialTheme.colorScheme.error) }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmDelete = false }) { Text("Отмена") }
-            }
+    if (showDeleteDialog) {
+        RemarkDeleteDialog(
+            onConfirm = onConfirmDelete,
+            onDismiss = onCancelDelete
         )
     }
+}
+
+/** Диалог подтверждения удаления замечания (вызывается снаружи). */
+@Composable
+private fun RemarkDeleteDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.dialog_title_delete_remark)) },
+        text = { Text(stringResource(R.string.detail_delete_text)) },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                modifier = Modifier.testTag(RemarkDetailTags.CONFIRM_DELETE)
+            ) { Text(stringResource(R.string.button_delete), color = MaterialTheme.colorScheme.error) }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.testTag(RemarkDetailTags.CANCEL_DELETE)
+            ) { Text(stringResource(R.string.button_cancel)) }
+        }
+    )
 }
 
 /** Строка «label: value». */
@@ -294,8 +367,14 @@ private fun formatCoord(lat: Double, lng: Double): String =
     "%.6f, %.6f".format(Locale.US, lat, lng)
 
 /** Открывает точку во внешнем картографическом приложении (geo:-схема). */
-private fun openInExternalMap(context: android.content.Context, lat: Double, lng: Double) {
-    val label = "Замечание"
+private fun openInExternalMap(
+    context: android.content.Context,
+    lat: Double,
+    lng: Double,
+    noMapAppText: String
+) {
+    // Метка точки на карте: имя приложения без ресурсов (external API вызов).
+    val label = "АПК ОПО"
     val geoUri = "geo:$lat,$lng?q=$lat,$lng($label)".toUri()
     val geoIntent = Intent(Intent.ACTION_VIEW, geoUri)
     val webIntent = Intent(
@@ -309,7 +388,7 @@ private fun openInExternalMap(context: android.content.Context, lat: Double, lng
             context.startActivity(webIntent)
         } catch (e2: ActivityNotFoundException) {
             android.widget.Toast
-                .makeText(context, "Нет приложения для карт", android.widget.Toast.LENGTH_SHORT)
+                .makeText(context, noMapAppText, android.widget.Toast.LENGTH_SHORT)
                 .show()
         }
     }
@@ -320,13 +399,18 @@ private fun openInExternalMap(context: android.content.Context, lat: Double, lng
  * перетаскивание — при зуме > 1.
  */
 @Composable
-private fun ZoomableImage(model: File, contentDescription: String?) {
+private fun ZoomableImage(
+    imageLoader: coil3.ImageLoader,
+    model: File,
+    contentDescription: String?
+) {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
 
     AsyncImage(
         model = model,
         contentDescription = contentDescription,
+        imageLoader = imageLoader,
         contentScale = ContentScale.Fit,
         modifier = Modifier
             .fillMaxSize()

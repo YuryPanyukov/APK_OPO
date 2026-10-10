@@ -40,8 +40,10 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import code_sys.apkopo.R
 import code_sys.apkopo.domain.repository.ReportFormat
 import code_sys.apkopo.ui.viewmodel.ReportViewModel
 import java.io.File
@@ -60,10 +62,10 @@ fun ReportScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Отчёт") },
+                title = { Text(stringResource(R.string.report_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.button_back))
                     }
                 }
             )
@@ -75,7 +77,7 @@ fun ReportScreen(
                 .padding(padding)
         ) {
             Text(
-                "Формат отчёта",
+                stringResource(R.string.report_format_label),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp)
@@ -147,13 +149,16 @@ private fun ReportReadyContent(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val shareSubject = stringResource(R.string.report_commission_label, commissionTitle)
+    val shareChooserTitle = stringResource(R.string.report_share_title)
+    val noOpenAppText = stringResource(R.string.report_no_open_app)
 
     fun shareIntent(file: File): Intent {
         val uri = FileProvider.getUriForFile(context, context.packageName + ".fileprovider", file)
         return Intent(Intent.ACTION_SEND).apply {
             type = state.format.mimeType
             putExtra(Intent.EXTRA_STREAM, uri)
-            putExtra(Intent.EXTRA_SUBJECT, "Отчёт по комиссии: $commissionTitle")
+            putExtra(Intent.EXTRA_SUBJECT, shareSubject)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
     }
@@ -172,11 +177,11 @@ private fun ReportReadyContent(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
-            Text("Комиссия: $commissionTitle", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.report_commission_label, commissionTitle), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(4.dp))
             Text(
-                "Формат: ${state.format.name} • ${state.file.name}" +
-                    if (state.format == ReportFormat.PDF) " • страниц: ${state.pages.size}" else "",
+                stringResource(R.string.report_format_info, state.format.name, state.file.name) +
+                    if (state.format == ReportFormat.PDF) stringResource(R.string.report_pages_count, state.pages.size) else "",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -185,15 +190,14 @@ private fun ReportReadyContent(
         if (state.format == ReportFormat.HTML) {
             item {
                 Text(
-                    "HTML-отчёт готов. Его можно открыть в браузере или отправить по e-mail — " +
-                        "фото встроены в файл, интернет не нужен.",
+                    stringResource(R.string.report_html_ready),
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
         } else if (state.pages.isEmpty()) {
             item {
                 Text(
-                    "Предпросмотр недоступен, но файл готов к отправке.",
+                    stringResource(R.string.report_no_preview),
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -203,12 +207,12 @@ private fun ReportReadyContent(
                     Column(modifier = Modifier.padding(8.dp)) {
                         Image(
                             bitmap = page.asImageBitmap(),
-                            contentDescription = "Страница ${index + 1}",
+                            contentDescription = stringResource(R.string.content_page, index + 1),
                             contentScale = ContentScale.FillWidth,
                             modifier = Modifier.fillMaxWidth()
                         )
                         Text(
-                            "Страница ${index + 1} из ${state.pages.size}",
+                            stringResource(R.string.report_page_counter, index + 1, state.pages.size),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 4.dp)
@@ -223,14 +227,14 @@ private fun ReportReadyContent(
             Button(
                 onClick = {
                     context.startActivity(
-                        Intent.createChooser(shareIntent(state.file), "Отправить отчёт")
+                        Intent.createChooser(shareIntent(state.file), shareChooserTitle)
                     )
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(Icons.Default.Share, contentDescription = null)
                 Spacer(Modifier.size(8.dp))
-                Text("Отправить по e-mail")
+                Text(stringResource(R.string.button_send_report))
             }
             Spacer(Modifier.height(8.dp))
             OutlinedButton(
@@ -239,7 +243,7 @@ private fun ReportReadyContent(
                         context.startActivity(openIntent(state.file))
                     } catch (e: ActivityNotFoundException) {
                         android.widget.Toast
-                            .makeText(context, "Нет приложения для открытия", android.widget.Toast.LENGTH_SHORT)
+                            .makeText(context, noOpenAppText, android.widget.Toast.LENGTH_SHORT)
                             .show()
                     }
                 },
@@ -247,11 +251,14 @@ private fun ReportReadyContent(
             ) {
                 Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null)
                 Spacer(Modifier.size(8.dp))
-                Text(if (state.format == ReportFormat.HTML) "Открыть в браузере" else "Открыть файл")
+                Text(
+                    if (state.format == ReportFormat.HTML) stringResource(R.string.button_open_in_browser)
+                    else stringResource(R.string.button_open_report)
+                )
             }
             Spacer(Modifier.height(8.dp))
             OutlinedButton(onClick = onGenerate, modifier = Modifier.fillMaxWidth()) {
-                Text("Перегенерировать")
+                Text(stringResource(R.string.button_regenerate))
             }
         }
     }
@@ -271,7 +278,7 @@ private fun CenteredStatus(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Комиссия: $commissionTitle",
+            text = stringResource(R.string.report_commission_label, commissionTitle),
             style = MaterialTheme.typography.titleMedium
         )
         Spacer(Modifier.height(16.dp))
@@ -279,30 +286,30 @@ private fun CenteredStatus(
         when (state) {
             is ReportViewModel.State.Idle -> {
                 Text(
-                    "Сформируйте отчёт со всеми замечаниями и фото: PDF для печати или HTML для браузера.",
+                    stringResource(R.string.report_empty),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(Modifier.height(24.dp))
                 Button(onClick = onGenerate, modifier = Modifier.fillMaxWidth()) {
-                    Text("Сгенерировать отчёт")
+                    Text(stringResource(R.string.report_generate))
                 }
             }
 
             is ReportViewModel.State.Working -> {
                 CircularProgressIndicator(modifier = Modifier.size(40.dp))
                 Spacer(Modifier.height(16.dp))
-                Text("Генерация отчёта…", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.report_generating), style = MaterialTheme.typography.bodyMedium)
             }
 
             is ReportViewModel.State.Error -> {
                 Text(
-                    "Не удалось сформировать отчёт.",
+                    stringResource(R.string.report_error),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error
                 )
                 Spacer(Modifier.height(24.dp))
                 Button(onClick = onGenerate, modifier = Modifier.fillMaxWidth()) {
-                    Text("Повторить")
+                    Text(stringResource(R.string.button_retry))
                 }
             }
 

@@ -35,7 +35,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import code_sys.apkopo.R
 import code_sys.apkopo.data.local.entity.Commission
 import code_sys.apkopo.util.PhotoStorage
 import java.text.SimpleDateFormat
@@ -61,10 +63,10 @@ fun CommissionListScreen(
     var query by rememberSaveable { mutableStateOf("") }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Комиссии") }) },
+        topBar = { TopAppBar(title = { Text(stringResource(R.string.screen_commissions_title)) }) },
         floatingActionButton = {
             FloatingActionButton(onClick = { showCreate = true }) {
-                Icon(Icons.Default.Add, contentDescription = "Создать комиссию")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.content_create_commission))
             }
         }
     ) { padding ->
@@ -76,7 +78,7 @@ fun CommissionListScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Нет комиссий.\nНажмите +, чтобы создать первую.",
+                    text = stringResource(R.string.screen_commissions_empty),
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
@@ -95,7 +97,7 @@ fun CommissionListScreen(
                 OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },
-                    label = { Text("Поиск по названию") },
+                    label = { Text(stringResource(R.string.action_search_by_title)) },
                     singleLine = true,
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                     modifier = Modifier
@@ -110,7 +112,7 @@ fun CommissionListScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Ничего не найдено по запросу «$query»",
+                            text = stringResource(R.string.screen_commissions_no_match, query),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -147,7 +149,7 @@ fun CommissionListScreen(
                                             .align(Alignment.CenterEnd)
                                             .padding(8.dp)
                                     ) {
-                                        Icon(Icons.Default.Delete, contentDescription = "Удалить")
+                                        Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.button_delete))
                                     }
                                 }
                             }
@@ -171,18 +173,18 @@ fun CommissionListScreen(
     toDelete?.let { commission ->
         AlertDialog(
             onDismissRequest = { toDelete = null },
-            title = { Text("Удалить комиссию?") },
+            title = { Text(stringResource(R.string.dialog_title_delete_commission)) },
             text = {
-                Text("«${commission.title}» и все её замечания будут удалены.")
+                Text(stringResource(R.string.screen_commissions_delete_confirmation, commission.title))
             },
             confirmButton = {
                 TextButton(onClick = {
                     onDelete(commission)
                     toDelete = null
-                }) { Text("Удалить", color = MaterialTheme.colorScheme.error) }
+                }) { Text(stringResource(R.string.button_delete), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { toDelete = null }) { Text("Отмена") }
+                TextButton(onClick = { toDelete = null }) { Text(stringResource(R.string.button_cancel)) }
             }
         )
     }
@@ -193,12 +195,12 @@ private fun CreateCommissionDialog(onDismiss: () -> Unit, onConfirm: (String) ->
     var title by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Новая комиссия") },
+        title = { Text(stringResource(R.string.dialog_title_new_commission)) },
         text = {
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
-                label = { Text("Название") },
+                label = { Text(stringResource(R.string.form_hint_title)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -207,10 +209,10 @@ private fun CreateCommissionDialog(onDismiss: () -> Unit, onConfirm: (String) ->
             TextButton(
                 onClick = { if (title.isNotBlank()) onConfirm(title) },
                 enabled = title.isNotBlank()
-            ) { Text("Создать") }
+            ) { Text(stringResource(R.string.button_create)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Отмена") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.button_cancel)) }
         }
     )
 }

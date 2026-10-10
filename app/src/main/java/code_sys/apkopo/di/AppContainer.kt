@@ -33,6 +33,9 @@ class AppContainer(context: Context) {
     val locationProvider = LocationProvider(appContext)
     val reportGenerator = ReportGenerator(appContext)
 
+    /** ImageLoader Coil для загрузки фото на экранах (без Coil singleton). */
+    val imageLoader = AppImageLoader(appContext)
+
     val createCommissionUseCase = CreateCommissionUseCase(commissionRepository)
     val deleteCommissionUseCase = DeleteCommissionUseCase(commissionRepository)
     val updateCommissionUseCase = UpdateCommissionUseCase(commissionRepository)

@@ -4,10 +4,11 @@ import android.content.Context
 import android.net.Uri
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import androidx.core.graphics.scale
 import androidx.exifinterface.media.ExifInterface
 import code_sys.apkopo.domain.repository.PhotoFiles
-import java.io.File
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -23,7 +24,12 @@ data class PhotoMeta(
 )
 
 /**
- * Хранит фото во внутреннем хранилище приложения
+ * Макс. длина одной стороны для хранимых фото.
+ * При 2000px + JPEG q=85 считаем приемлимым для памяти на длинных осмотрах.
+ */
+private const val MAX_PHOTO_DIM = 2000
+
+/** Хранит фото во внутреннем хранилище приложения
  * (external files dir — разрешение на запись не требуется)
  * и извлекает из них EXIF-метаданные.
  */
@@ -33,16 +39,7 @@ class PhotoStorage(private val context: Context) : PhotoFiles {
         get() = File(context.getExternalFilesDir(android.os.Environment.DIRECTORY_PICTURES), "photos")
             .apply { mkdirs() }
 
-    /**
-     * Макс. длина одной стороны для хранимых фото.
-     * При 2000px + JPEG q=85 считаем приемлимым для памяти на длинных осмотрах.
-     */
-    companion object {
-        const val MAX_PHOTO_DIM = 2000
-    }
-
-    /**
-     * Создаёт сжатую копию фото в памяти: макс. сторона [MAX_PHOTO_DIM] px,
+    /** Создаёт сжатую копию фото в памяти: макс. сторона [maxDim] px,
      * JPEG quality 85. Возвращает null, если не удалось декодировать/сжать.
      */
     private fun resizeBitmap(source: File, maxDim: Int = MAX_PHOTO_DIM): Bitmap? {
@@ -64,7 +61,7 @@ class PhotoStorage(private val context: Context) : PhotoFiles {
             maxDim to bitmap.width * scale.toInt()
         }
 
-        val resized = Bitmap.createScaledBitmap(bitmap, w, h, true).also { recycled ->
+        val resized = bitmap.scale(w, h).also { recycled ->
             if (!recycled.isRecycled) recycled.recycle()
         }
         if (resized.isRecycled) return null
@@ -97,8 +94,7 @@ class PhotoStorage(private val context: Context) : PhotoFiles {
         }
     }
 
-    /**
-     * Удаляет файл фото. Удаляется только файл внутри каталога приложения —
+    /** Удаляет файл фото. Удаляется только файл внутри каталога приложения —
      * случайная передача чужого пути ни к чему не приведёт.
      */
     override fun delete(path: String) {

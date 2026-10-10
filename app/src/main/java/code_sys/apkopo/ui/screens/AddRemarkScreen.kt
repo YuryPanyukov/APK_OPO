@@ -48,14 +48,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import code_sys.apkopo.R
+import coil3.SingletonImageLoader
 import code_sys.apkopo.ui.viewmodel.AddRemarkViewModel
 import code_sys.apkopo.util.GeoPoint
 import code_sys.apkopo.util.PhotoMeta
 import code_sys.apkopo.util.PhotoStorage
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import java.io.File
 
 /** Теги элементов формы замечания (используются в UI-тестах). */
@@ -71,6 +74,7 @@ fun AddRemarkScreen(
     viewModel: AddRemarkViewModel,
     onBack: () -> Unit
 ) {
+    val imageLoader = viewModel.imageLoader
     val location by viewModel.location.collectAsStateWithLifecycle()
     val objectName by viewModel.objectName.collectAsStateWithLifecycle()
     val remarkType by viewModel.remarkType.collectAsStateWithLifecycle()
@@ -82,26 +86,44 @@ fun AddRemarkScreen(
 
     var saved by rememberSaveable { mutableStateOf(false) }
 
+    // Синхронизируем принудительный запрос GPS с изменением признака доступности.
+    LaunchedEffect(viewModel.gpsAvailable) {
+        if (!viewModel.gpsAvailable.value) viewModel.refreshLocation()
+    }
+
+    // GPS-статус формируется на основе текущих состояний.
+    val gpsStatus: String = viewModel.gpsAvailable.value?.let { available ->
+        if (available) {
+            geo?.let {
+                stringResource(R.string.detail_gps_coords, it.lat, it.lng)
+            } ?: stringResource(R.string.detail_gps_obtained_but_empty)
+        } else {
+            stringResource(R.string.detail_gps_unavailable)
+        }
+    } ?: stringResource(R.string.detail_gps_loading)
+
     // Запрашиваем геолокацию при открытии экрана.
     // В режиме редактирования не затираем сохранённые координаты — только по кнопке GPS.
     LaunchedEffect(Unit) { if (!viewModel.isEdit) viewModel.fetchLocation() }
     LaunchedEffect(saved) { if (saved) onBack() }
 
-    // Если GPS отсутствует — принудительно запрашиваем (повторная попытка).
-    LaunchedEffect(viewModel.gpsAvailable) {
-        if (!viewModel.gpsAvailable.value) viewModel.refreshLocation()
-    }
-
     AddRemarkContent(
-        title = if (viewModel.isEdit) "Редактирование замечания" else "Новое замечание",
-        saveLabel = if (viewModel.isEdit) "Сохранить изменения" else "Сохранить замечание",
+        title = if (viewModel.isEdit) stringResource(R.string.form_title_edit_remark) else stringResource(R.string.form_title_new_remark),
+        saveLabel = if (viewModel.isEdit) stringResource(R.string.form_save_edit_remark) else stringResource(R.string.form_save_new_remark),
         location = location,
         objectName = objectName,
         remarkType = remarkType,
         description = description,
         photos = photos,
+        imageLoader = imageLoader,
         geo = geo,
         saving = saving,
+        gpsStatus = gpsStatus,
+        gpsColor = if (gpsAvailable) {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        } else {
+            MaterialTheme.colorScheme.error
+        },
         onLocation = viewModel::onLocation,
         onObjectName = viewModel::onObjectName,
         onRemarkType = viewModel::onRemarkType,
@@ -116,22 +138,24 @@ fun AddRemarkScreen(
     )
 }
 
-/**
- * Форма нового замечания: поля, геолокация, фото из камеры/галереи.
- * Полностью stateless — всё состояние приходит сверху.
+/** Форма нового замечания: поля, геолокация, фото из камеры/галереи.
+ *  Полностью stateless — всё состояние приходит сверху.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddRemarkContent(
-    title: String = "Новое замечание",
-    saveLabel: String = "Сохранить замечание",
+    title: String = stringResource(R.string.form_title_new_remark),
+    saveLabel: String = stringResource(R.string.form_save_new_remark),
     location: String,
     objectName: String,
     remarkType: String,
     description: String,
     photos: List<PhotoMeta>,
+    imageLoader: coil3.ImageLoader? = null,
     geo: GeoPoint?,
     saving: Boolean,
+    gpsStatus: String,
+    gpsColor: androidx.compose.ui.graphics.Color,
     onLocation: (String) -> Unit,
     onObjectName: (String) -> Unit,
     onRemarkType: (String) -> Unit,
@@ -170,7 +194,7 @@ fun AddRemarkContent(
                 title = { Text(title) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.button_back))
                     }
                 }
             )
@@ -187,7 +211,7 @@ fun AddRemarkContent(
             OutlinedTextField(
                 value = location,
                 onValueChange = onLocation,
-                label = { Text("Место") },
+                label = { Text(stringResource(R.string.form_hint_place)) },
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -197,7 +221,7 @@ fun AddRemarkContent(
             OutlinedTextField(
                 value = objectName,
                 onValueChange = onObjectName,
-                label = { Text("Объект") },
+                label = { Text(stringResource(R.string.form_hint_object)) },
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -212,7 +236,7 @@ fun AddRemarkContent(
                     value = remarkType,
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Тип замечания") },
+                    label = { Text(stringResource(R.string.form_hint_type)) },
                     trailingIcon = {
                         ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeExpanded)
                     },
@@ -239,7 +263,7 @@ fun AddRemarkContent(
             OutlinedTextField(
                 value = description,
                 onValueChange = onDescription,
-                label = { Text("Описание") },
+                label = { Text(stringResource(R.string.form_hint_description)) },
                 minLines = 3,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -252,28 +276,17 @@ fun AddRemarkContent(
                 OutlinedButton(onClick = onFetchLocation) {
                     Icon(Icons.Default.MyLocation, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.size(6.dp))
-                    Text("GPS")
-                }
-                val gpsStatus = if (gpsAvailable) {
-                    "GPS: недоступен — нажмите GPS"
-                } else {
-                    geo?.let {
-                        "%.6f, %.6f".format(java.util.Locale.US, it.lat, it.lng)
-                    } ?: "GPS: получено, но координаты не заданы"
+                    Text(stringResource(R.string.action_show_gps))
                 }
                 Text(
                     text = gpsStatus,
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (gpsAvailable) {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    } else {
-                        MaterialTheme.colorScheme.error
-                    }
+                    color = gpsColor
                 )
             }
 
             // Фото
-            Text("Фото", style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.action_photos), style = MaterialTheme.typography.titleSmall)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = {
                     val file = onNewCameraFile()
@@ -282,7 +295,7 @@ fun AddRemarkContent(
                 }) {
                     Icon(Icons.Default.AddAPhoto, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.size(6.dp))
-                    Text("Камера")
+                    Text(stringResource(R.string.action_camera))
                 }
                 OutlinedButton(onClick = {
                     val request = androidx.activity.result.PickVisualMediaRequest.Builder()
@@ -292,7 +305,7 @@ fun AddRemarkContent(
                 }) {
                     Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.size(6.dp))
-                    Text("Галерея")
+                    Text(stringResource(R.string.action_gallery))
                 }
             }
 
@@ -303,6 +316,7 @@ fun AddRemarkContent(
                             AsyncImage(
                                 model = File(meta.filePath),
                                 contentDescription = null,
+                                imageLoader = imageLoader ?: SingletonImageLoader.get(context),
                                 modifier = Modifier
                                     .size(96.dp)
                                     .clickable { onRemovePhoto(meta) }
@@ -310,7 +324,7 @@ fun AddRemarkContent(
                             IconButton(onClick = { onRemovePhoto(meta) }) {
                                 Icon(
                                     Icons.Default.Close,
-                                    contentDescription = "Убрать",
+                                    contentDescription = stringResource(R.string.action_remove_photo),
                                     modifier = Modifier.size(16.dp)
                                 )
                             }
@@ -346,7 +360,7 @@ fun AddRemarkContent(
 
             if (objectName.isBlank() || location.isBlank()) {
                 Text(
-                    "Заполните «Место» и «Объект», чтобы сохранить.",
+                    stringResource(R.string.form_hint_fill_required),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

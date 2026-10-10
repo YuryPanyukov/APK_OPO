@@ -1,3 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">APK OPO</string>
+    <string name="app_name">АПК ОПО</string>
+
+    <!-- Общие -->
+    <string name="button_back">Назад</string>
+    <string name="common_loading">Загрузка…</string>
+    <string name="button_cancel">Отмена</string>
+    <string name="button_delete">Удалить</string>
+    <string name="button_save">Сохранить</string>
+    <string name="button_create">Создать</string>
+    <string name="form_hint_title">Название</string>
+
+    <!-- Экран списка комиссий -->
+    <string name="screen_commissions_title">Комиссии</string>
+    <string name="screen_commissions_empty">Нет комиссий.\nНажмите +, чтобы создать первую.</string>
+    <string name="screen_commissions_no_match">Ничего не найдено по запросу «%1$s»</string>
+    <string name="screen_commissions_delete_confirmation">«%1$s» и все её замечания будут удалены.</string>
+    <string name="dialog_title_new_commission">Новая комиссия</string>
+    <string name="dialog_title_delete_commission">Удалить комиссию?</string>
+    <string name="content_create_commission">Создать комиссию</string>
+    <string name="action_search_by_title">Поиск по названию</string>
+
+    <!-- Экран деталей комиссии -->
+    <string name="screen_commission_title">Комиссия</string>
+    <string name="dialog_title_rename_commission">Переименовать комиссию</string>
+    <string name="content_rename">Переименовать</string>
+    <string name="content_remark">Замечание</string>
+    <string name="label_created_date">Дата создания</string>
+    <string name="label_remarks_count">Замечаний: %1$d</string>
+    <string name="screen_commission_no_remarks">Замечаний пока нет. Нажмите «Замечание», чтобы добавить.</string>
+    <string name="screen_commission_report_hint">Для просмотра отчёта нажмите кнопку отправки в панели сверху.</string>
+    <string name="screen_commission_delete_text">Все замечания и фото будут удалены.</string>
+
+    <!-- Форма замечания -->
+    <string name="form_title_new_remark">Новое замечание</string>
+    <string name="form_title_edit_remark">Редактирование замечания</string>
+    <string name="form_save_new_remark">Сохранить замечание</string>
+    <string name="form_save_edit_remark">Сохранить изменения</string>
+    <string name="form_hint_place">Место</string>
+    <string name="form_hint_object">Объект</string>
+    <string name="form_hint_type">Тип замечания</string>
+    <string name="form_hint_description">Описание</string>
+    <string name="form_hint_fill_required">Заполните «Место» и «Объект», чтобы сохранить.</string>
+
+    <!-- Действия формы -->
+    <string name="action_show_gps">GPS</string>
+    <string name="action_photos">Фото</string>
+    <string name="action_camera">Камера</string>
+    <string name="action_gallery">Галерея</string>
+    <string name="action_remove_photo">Убрать</string>
+
+    <!-- Отчёт -->
+    <string name="report_title">Отчёт</string>
+    <string name="report_format_label">Формат отчёта</string>
+    <string name="report_generate">Сгенерировать отчёт</string>
+    <string name="report_commission_label">Комиссия: %1$s</string>
+    <string name="report_format_info">Формат: %1$s • %2$s</string>
+    <string name="report_pages_count"> • страниц: %1$d</string>
+    <string name="content_page">Страница %1$d</string>
+    <string name="report_empty">Сформируйте отчёт со всеми замечаниями и фото: PDF для печати или HTML для браузера.</string>
+    <string name="report_generating">Генерация отчёта…</string>
+    <string name="report_error">Не удалось сформировать отчёт.</string>
+    <string name="button_retry">Повторить</string>
+    <string name="report_page_counter">Страница %1$d из %2$d</string>
+    <string name="report_no_preview">Предпросмотр недоступен, но файл готов к отправке.</string>
+    <string name="report_html_ready">HTML-отчёт готов. Его можно открыть в браузере или отправить по e-mail — фото встроены в файл, интернет не нужен.</string>
+    <string name="button_send_report">Отправить по e-mail</string>
+    <string name="report_share_title">Отправить отчёт</string>
+    <string name="report_no_open_app">Нет приложения для открытия</string>
+    <string name="button_open_report">Открыть файл</string>
+    <string name="button_open_in_browser">Открыть в браузере</string>
+    <string name="button_regenerate">Перегенерировать</string>
+
+    <!-- Детали замечания -->
+    <string name="detail_title_remark">Замечание</string>
+    <string name="detail_no_photos">Фото не прикреплены</string>
+    <string name="detail_no_coords">Координаты неизвестны</string>
+    <string name="detail_no_gps_app">Нет приложения для карт</string>
+    <string name="detail_gps_unavailable">GPS: недоступен — нажмите GPS</string>
+    <string name="detail_gps_obtained_but_empty">GPS: получено, но координаты не заданы</string>
+    <string name="detail_gps_loading">GPS: неопределено</string>
+    <string name="detail_gps_coords">GPS: %1$.6f, %2$.6f</string>
+    <string name="detail_gps_no_data">GPS: нет данных</string>
+    <string name="detail_gps_remark">GPS замечания</string>
+    <string name="detail_gps_user">GPS пользователя</string>
+    <string name="detail_shot_time">Съёмка: %1$s</string>
+    <string name="content_photo_number">Фото %1$d</string>
+    <string name="dialog_title_delete_remark">Удалить замечание?</string>
+    <string name="detail_delete_text">Замечание и все прикреплённые фото будут удалены.</string>
+    <string name="action_show_map">Показать на карте</string>
+    <string name="action_edit">Редактировать</string>
+    <string name="label_type">Тип</string>
+    <string name="label_gps">GPS</string>
+    <string name="label_time">Время</string>
 </resources>
